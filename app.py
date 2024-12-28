@@ -1,5 +1,6 @@
 from Evaluator import BaseEvaluator
 from StructureEvaluator import StructureAndGrammarEvaluator
+from IntroductionEvaluator import IntroductionEvaluator
 
 base_evaluator = BaseEvaluator("AI ML Thesis Report.pdf")
 structure_evaluator = StructureAndGrammarEvaluator(

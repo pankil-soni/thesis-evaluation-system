@@ -1,4 +1,3 @@
-from nltk.sem.util import evaluate
 from Evaluator import BaseEvaluator
 import pypdf
 import numpy as np
