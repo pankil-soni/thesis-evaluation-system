@@ -3,6 +3,7 @@ import pypdf
 import re
 from spellchecker import SpellChecker
 
+
 class StructureAndGrammarEvaluator(BaseEvaluator):
     def __init__(self, pdf_path, use_llm: bool = True, base_instance=None):
         super().__init__(pdf_path, use_llm, base_instance)
@@ -26,12 +27,11 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
                 "hypothesis",
                 "theoretical",
                 "empirical",
-                # Add more domain-specific words
             ]
         )
 
     def _structure_check(self):
-        """Faster structure checking using regex"""
+        """structure checking using regex"""
         text_lower = self.full_text.lower()
         found_sections = []
         section_positions = []
@@ -52,10 +52,9 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
         """Simplified formatting check focusing on key indicators"""
         score = 0
 
-        # page number check
-        with pypdf.PdfReader(self.pdf_path) as pdf:
-            if len(pdf.pages) > 1:
-                score += 0.25
+        # check if greater than 1000 words
+        if len(self.full_text) >= 1000:
+            score += 0.25
 
         # Sample-based line spacing check
         lines = self.full_text.split("\n")[:100]  # Check first 100 lines only
@@ -80,13 +79,13 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
     def _grammar_spell_check(self):
         """Efficient grammar and spelling check"""
         # Take a small sample for analysis
-        sample_text = self.full_text[:2000]
+        sample_text = self.full_text[:10000]
         words = re.findall(r"\b\w+\b", sample_text.lower())
 
         if not words:
             return 0
 
-        # Basic grammar checks (faster than LanguageTool)
+        # Basic grammar checks (than LanguageTool)
         grammar_errors = 0
 
         # Check for basic patterns
@@ -95,6 +94,9 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
             r"\b(is|are|am)\s+\w+ed\b": 1,  # Verb agreement
             r"\b(their|there|they\'re)\b": 0.5,  # Common confusions
             r"\b(its|it\'s)\b": 0.5,
+            r"\b(have|has|had)\s+been\b": 0.5,
+            r"\b(\w+ed)\s+(?:\1|a|an)\b": 0.5,
+            r"\b(\w+ing)\s+(?:\1|a|an)\b": 0.5,
         }
 
         for pattern, weight in grammar_patterns.items():
@@ -139,7 +141,7 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
         if not self._extract_text():
             return 0
 
-        # Get scores using faster methods
+        # Get scores using methods
         structure_score, found_sections = self._structure_check()
         formatting_score = self._efficient_formatting_check()
         grammar_spelling_score = self._grammar_spell_check()
