@@ -4,6 +4,7 @@ import numpy as np
 from typing import Dict, Tuple
 from datetime import datetime
 
+
 class LiteratureReviewEvaluator(BaseEvaluator):
     """Evaluates thesis literature review"""
 
@@ -150,7 +151,7 @@ class LiteratureReviewEvaluator(BaseEvaluator):
         coverage_score = min(1.0, len(research_terms) / 100)  # Normalize to max of 1.0
         return coverage_score
 
-    def _evaluate_with_llm(self) -> Dict:
+    def _evaluate_with_llm(self, text: str) -> Dict:
         """Use LLM to evaluate the literature review quality"""
 
         prompt = f"""
@@ -277,10 +278,10 @@ class LiteratureReviewEvaluator(BaseEvaluator):
             feedback.append(f"LLM Analysis: {llm_scores.get('justification', '')}")
 
         return {
-            "score": round(score, 2),
+            "score": float(round(score, 2)),
             "grade": grade,
             "citation_analysis": citation_analysis,
-            "coverage_score": round(coverage_score * 5, 2),
+            "coverage_score": float(round(coverage_score * 5, 2)),
             "llm_scores": llm_scores,
             "feedback": ". ".join(feedback),
         }

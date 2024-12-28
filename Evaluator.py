@@ -9,6 +9,9 @@ from openai import OpenAI
 
 load_dotenv()
 
+nlp = spacy.load("en_core_web_sm")
+language_tool = language_tool_python.LanguageTool("en-US")
+
 
 class BaseEvaluator:
     """Base class with common functionality"""
@@ -23,8 +26,8 @@ class BaseEvaluator:
             self.full_text = base_instance.full_text
             self.pdf_path = base_instance.pdf_path
         else:
-            self.nlp = spacy.load("en_core_web_sm")
-            self.language_tool = language_tool_python.LanguageTool("en-US")
+            self.nlp = nlp
+            self.language_tool = language_tool
             self.pdf_path = pdf_path
             print("Extracting text...")
             if self._extract_text():

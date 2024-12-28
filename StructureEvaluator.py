@@ -136,35 +136,15 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
             grade = "Fail (0)"
 
         return {
-            "final_score": round(final_score, 2),
+            "final_score": float(round(final_score, 2)),
             "grade": grade,
             "details": {
                 "structure": {
-                    "score": round(structure_score * 5, 2),
+                    "score": float(round(structure_score * 5, 2)),
                     "found_sections": found_sections,
                 },
-                "formatting": round(formatting_score * 5, 2),
-                "grammar_spelling": round(grammar_spelling_score * 5, 2),
-                "style": round(style_score * 5, 2),
+                "formatting": float(round(formatting_score * 5, 2)),
+                "grammar_spelling": float(round(grammar_spelling_score * 5, 2)),
+                "style": float(round(style_score * 5, 2)),
             },
         }
-
-
-def evaluate_structure(pdf_path, use_llm: bool = True):
-    """Function to evaluate a thesis PDF"""
-    evaluator = StructureAndGrammarEvaluator(pdf_path, use_llm)
-    results = evaluator.evaluate()
-    # Print detailed results
-    print("\n=== Thesis Evaluation Results ===")
-    print(f"Final Score: {results['final_score']}/5.0")
-    print(f"Grade: {results['grade']}")
-    print("\nDetailed Scores:")
-    print(f"Structure: {results['details']['structure']['score']}/5.0")
-    print(
-        "Found Sections:", ", ".join(results["details"]["structure"]["found_sections"])
-    )
-    print(f"Formatting: {results['details']['formatting']}/5.0")
-    print(f"Grammar & Spelling: {results['details']['grammar_spelling']}/5.0")
-    print(f"Writing Style: {results['details']['style']}/5.0")
-
-    return results

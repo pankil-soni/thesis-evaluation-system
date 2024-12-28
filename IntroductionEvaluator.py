@@ -280,10 +280,10 @@ class IntroductionEvaluator(BaseEvaluator):
             feedback.append(f"LLM Analysis: {llm_scores.get('justification', '')}")
 
         return {
-            "score": round(score, 2),
+            "score": float(round(score, 2)),
             "grade": grade,
             "components_present": components,
-            "coherence_score": round(coherence, 2),
+            "coherence_score": float(round(coherence, 2)),
             "llm_scores": llm_scores if llm_scores else None,
             "feedback": " ".join(feedback),
         }

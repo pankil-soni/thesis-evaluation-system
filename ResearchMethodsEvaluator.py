@@ -268,13 +268,13 @@ class ResearchMethodsEvaluator(BaseEvaluator):
             feedback.append(f"LLM Analysis: {llm_scores.get('justification', '')}")
 
         return {
-            "score": round(score, 2),
+            "score": float(round(score, 2)),
             "grade": grade,
             "component_analysis": {
                 "found_components": component_analysis["components"],
                 "component_scores": component_analysis["scores"],
             },
-            "clarity_score": round(clarity_score * 10, 2),
+            "clarity_score": float(round(clarity_score * 10, 2)),
             "llm_scores": llm_scores,
             "feedback": ". ".join(feedback),
         }

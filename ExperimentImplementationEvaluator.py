@@ -302,13 +302,13 @@ class ExperimentImplementationEvaluator(BaseEvaluator):
             feedback.append(f"LLM Analysis: {llm_scores.get('justification', '')}")
 
         return {
-            "score": round(score, 2),
+            "score": float(round(score, 2)),
             "grade": grade,
             "technical_analysis": {
                 "found_components": technical_analysis["components"],
                 "component_scores": technical_analysis["scores"],
             },
-            "detail_score": round(detail_score * 10, 2),
+            "detail_score": float(round(detail_score * 10, 2)),
             "llm_scores": llm_scores,
             "feedback": ". ".join(feedback),
         }
