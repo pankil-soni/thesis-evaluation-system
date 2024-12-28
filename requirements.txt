@@ -1,0 +1,11 @@
+pdfplumber 
+spacy 
+language-tool-python 
+pypdf 
+pdf2image 
+opencv-python 
+numpy 
+textblob 
+scholarly
+openai
+python-dotenv
