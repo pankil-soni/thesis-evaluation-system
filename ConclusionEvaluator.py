@@ -1,4 +1,4 @@
-from Evaluator import BaseEvaluator
+from evaluator import BaseEvaluator
 import re
 import numpy as np
 from typing import Dict, Tuple
@@ -194,11 +194,12 @@ class ConclusionEvaluator(BaseEvaluator):
            - Practical applications
         
         Output Format:
+        
         {{
-          objectives_score: number,
-          implications_score: number,
-          recommendations_score: number,
-          justification: string
+          objectives_score: float,
+          implications_score: float,
+          recommendations_score: float,
+          justification: str
         }}
 
         Conclusion text:

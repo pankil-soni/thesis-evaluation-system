@@ -1,4 +1,4 @@
-from Evaluator import BaseEvaluator
+from evaluator import BaseEvaluator
 import re
 import numpy as np
 from typing import Dict, Tuple, List
@@ -280,13 +280,13 @@ class ResearchMethodsEvaluator(BaseEvaluator):
 
         Output Format:
         {{
-          "research_design": number,
-          "data_collection": number,
-          "data_analysis": number,
-          "validity_reliability": number,
-          "justification": string,
-          "strengths": [string],
-          "improvements": [string]
+          "research_design": float,
+          "data_collection": float,
+          "data_analysis": float,
+          "validity_reliability": float,
+          "justification": str,
+          "strengths": [str],
+          "improvements": [str]
         }}
         
         Return in JSON format.

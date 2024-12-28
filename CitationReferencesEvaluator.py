@@ -1,4 +1,4 @@
-from Evaluator import BaseEvaluator
+from evaluator import BaseEvaluator
 import re
 import numpy as np
 from typing import Dict, Tuple
@@ -161,10 +161,10 @@ class CitationReferencesEvaluator(BaseEvaluator):
         
         Output Format:
         {{
-          citation_score: number,
-          reference_score: number,
-          format_score: number,
-          justification: string
+          citation_score: float,
+          reference_score: float,
+          format_score: float,
+          justification: str
         }}
 
         References section:

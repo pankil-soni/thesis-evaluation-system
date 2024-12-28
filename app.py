@@ -4,13 +4,13 @@ import pandas as pd
 from pathlib import Path
 import plotly.graph_objects as go
 
-from Evaluator import BaseEvaluator
-from StructureEvaluator import StructureAndGrammarEvaluator
-from IntroductionEvaluator import IntroductionEvaluator
-from LiteratureReviewEvaluator import LiteratureReviewEvaluator
-from ResearchMethodsEvaluator import ResearchMethodsEvaluator
-from ExperimentImplementationEvaluator import ExperimentImplementationEvaluator
-from ResultsAnalysisEvaluator import ResultsAnalysisEvaluator
+from evaluator import BaseEvaluator
+from structure_evaluator import StructureAndGrammarEvaluator
+from introduction_evaluator import IntroductionEvaluator
+from literature_review_evaluator import LiteratureReviewEvaluator
+from research_methods_evaluator import ResearchMethodsEvaluator
+from experiment_implementation_evaluator import ExperimentImplementationEvaluator
+from results_analysis_evaluator import ResultsAnalysisEvaluator
 from ConclusionEvaluator import ConclusionEvaluator
 from CitationReferencesEvaluator import CitationReferencesEvaluator
 

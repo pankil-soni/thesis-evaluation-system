@@ -1,4 +1,4 @@
-from Evaluator import BaseEvaluator
+from evaluator import BaseEvaluator
 import re
 import numpy as np
 from typing import Dict, Tuple, List
@@ -294,13 +294,13 @@ class IntroductionEvaluator(BaseEvaluator):
 
         Output Format:
         {{
-            "problem_score": number,
-            "questions_score": number,
-            "objectives_score": number,
-            "justification_score": number,
-            "justification": string,
-            "strengths": list of string,
-            "improvements": list of string,
+            "problem_score": float,
+            "questions_score": float,
+            "objectives_score": float,
+            "justification_score": float,
+            "justification": str,
+            "strengths": [str],
+            "improvements": [str],
         }}
 
         Return in JSON format.
