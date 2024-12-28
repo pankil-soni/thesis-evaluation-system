@@ -4,8 +4,6 @@ import numpy as np
 from typing import Dict, Tuple
 from datetime import datetime
 
-
-
 class LiteratureReviewEvaluator(BaseEvaluator):
     """Evaluates thesis literature review"""
 
@@ -259,7 +257,7 @@ class LiteratureReviewEvaluator(BaseEvaluator):
         # LLM evaluation if enabled
         llm_scores = None
         if self.use_llm:
-            llm_scores = self.evaluate_with_llm(lit_review_text)
+            llm_scores = self._evaluate_with_llm(lit_review_text)
 
         # Calculate final score
         score, grade = self.calculate_final_score(
