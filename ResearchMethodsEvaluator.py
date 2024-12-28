@@ -1,78 +1,26 @@
 from Evaluator import BaseEvaluator
 import re
 import numpy as np
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
+from collections import defaultdict
 
 
 class ResearchMethodsEvaluator(BaseEvaluator):
-    """Evaluates thesis research methodology section"""
+    """Enhanced evaluator for thesis research methodology with improved assessment criteria"""
 
     def __init__(self, pdf_path: str, use_llm: bool = True, base_instance=None):
-        """Initialize the ResearchMethodsEvaluator with option to use LLM"""
         super().__init__(pdf_path, use_llm, base_instance)
-
-        # Initialize common methodology terms and patterns
-        self.methodology_terms = {
-            "research_design": [
-                "quantitative",
-                "qualitative",
-                "mixed method",
-                "experimental",
-                "quasi-experimental",
-                "descriptive",
-                "exploratory",
-                "correlational",
-                "case study",
-                "longitudinal",
-                "cross-sectional",
-            ],
-            "data_collection": [
-                "survey",
-                "interview",
-                "observation",
-                "questionnaire",
-                "sampling",
-                "focus group",
-                "experiment",
-                "measurement",
-                "instrument",
-                "data collection",
-                "recording",
-            ],
-            "data_analysis": [
-                "statistical",
-                "regression",
-                "analysis",
-                "coding",
-                "thematic",
-                "content analysis",
-                "factor analysis",
-                "correlation",
-                "t-test",
-                "anova",
-                "grounded theory",
-            ],
-            "validation": [
-                "validity",
-                "reliability",
-                "triangulation",
-                "verification",
-                "credibility",
-                "trustworthiness",
-                "reproducibility",
-                "bias",
-                "limitation",
-            ],
-        }
+        self.quality_indicators = self._initialize_quality_indicators()
 
     def extract_methodology(self) -> str:
         """Extract the methodology section using patterns"""
         method_patterns = [
-            r"(?i)^(?:CHAPTER\s+3\.?\s*)?METHODOLOGY\s*$",
-            r"(?i)^(?:3\.?\s+)?RESEARCH\s+METHODS?\s*$",
-            r"(?i)^(?:RESEARCH\s+METHODOLOGY)\s*$",
-            r"(?i)^(?:METHODS?\s+AND\s+MATERIALS)\s*$",
-            r"(?i)^(?:EXPERIMENTAL\s+DESIGN)\s*$",
+            r"(?i)^(?:METHODOLOGY)",
+            r"(?i)^(?:CHAPTER\s+3\.?\s)?METHODOLOGY\s$",
+            r"(?i)^(?:3\.?\s+)?RESEARCH\s+METHODS?\s$",
+            r"(?i)^(?:RESEARCH\s+METHODOLOGY)\s$",
+            r"(?i)^(?:METHODS?\s+AND\s+MATERIALS)\s$",
+            r"(?i)^(?:EXPERIMENTAL\s+DESIGN)\s$",
         ]
 
         next_section_patterns = [
@@ -94,187 +42,358 @@ class ResearchMethodsEvaluator(BaseEvaluator):
             print(f"Error extracting methodology: {e}")
             return ""
 
-    def analyze_methodology_components(self, text: str) -> Dict:
-        """Analyze the presence and quality of key methodology components"""
-        components_found = {category: [] for category in self.methodology_terms}
-
-        # Find methodology terms in text
-        for category, terms in self.methodology_terms.items():
-            for term in terms:
-                if re.search(rf"\b{term}\b", text.lower()):
-                    components_found[category].append(term)
-
-        # Calculate completeness scores
-        scores = {}
-        for category, found_terms in components_found.items():
-            scores[category] = len(found_terms) / len(self.methodology_terms[category])
-
+    def _initialize_quality_indicators(self) -> Dict:
+        """Initialize comprehensive quality indicators for methodology assessment"""
         return {
-            "components": components_found,
-            "scores": scores,
-            "overall_score": np.mean(list(scores.values())),
+            "research_design": {
+                "approach": [
+                    r"(?i)research\s+design",
+                    r"(?i)research\s+approach",
+                    r"(?i)research\s+strategy",
+                    r"(?i)research\s+framework",
+                    r"(?i)research\s+methodology",
+                ],
+                "method_type": [
+                    r"(?i)quantitative(\s+research)?",
+                    r"(?i)qualitative(\s+research)?",
+                    r"(?i)mixed[\s-]method(s)?",
+                    r"(?i)experimental(\s+design)?",
+                    r"(?i)quasi[\s-]experimental",
+                ],
+                "justification": [
+                    r"(?i)chosen\s+because",
+                    r"(?i)selected\s+(due|because|for)",
+                    r"(?i)justification\s+for",
+                    r"(?i)rationale\s+for",
+                    r"(?i)this\s+approach\s+is\s+appropriate",
+                ],
+            },
+            "data_collection": {
+                "methods": [
+                    r"(?i)data\s+collection(\s+method(s)?)?",
+                    r"(?i)survey(\s+design)?",
+                    r"(?i)interview(\s+protocol)?",
+                    r"(?i)observation(\s+technique)?",
+                    r"(?i)experiment(al)?\s+setup",
+                ],
+                "sampling": [
+                    r"(?i)sampling(\s+strategy)?",
+                    r"(?i)sample\s+size",
+                    r"(?i)participant(s)?(\s+selection)?",
+                    r"(?i)population(\s+selection)?",
+                    r"(?i)inclusion(\s+criteria)?",
+                ],
+                "instruments": [
+                    r"(?i)research\s+instrument(s)?",
+                    r"(?i)measurement\s+tool(s)?",
+                    r"(?i)questionnaire(\s+design)?",
+                    r"(?i)survey\s+instrument",
+                    r"(?i)data\s+collection\s+tool(s)?",
+                ],
+            },
+            "data_analysis": {
+                "techniques": [
+                    r"(?i)data\s+analysis(\s+technique(s)?)?",
+                    r"(?i)statistical(\s+analysis)?",
+                    r"(?i)thematic(\s+analysis)?",
+                    r"(?i)content(\s+analysis)?",
+                    r"(?i)analysis\s+method(s)?",
+                ],
+                "procedures": [
+                    r"(?i)analysis\s+procedure(s)?",
+                    r"(?i)coding(\s+process)?",
+                    r"(?i)data\s+processing",
+                    r"(?i)analytical\s+framework",
+                    r"(?i)analysis\s+approach",
+                ],
+                "tools": [
+                    r"(?i)software(\s+tool(s)?)?",
+                    r"(?i)statistical\s+package",
+                    r"(?i)analysis\s+tool(s)?",
+                    r"(?i)data\s+analysis\s+software",
+                    r"(?i)analytical\s+tool(s)?",
+                ],
+            },
+            "validity_reliability": {
+                "validity": [
+                    r"(?i)validity(\s+measure(s)?)?",
+                    r"(?i)internal\s+validity",
+                    r"(?i)external\s+validity",
+                    r"(?i)construct\s+validity",
+                    r"(?i)face\s+validity",
+                ],
+                "reliability": [
+                    r"(?i)reliability(\s+measure(s)?)?",
+                    r"(?i)test[\s-]retest",
+                    r"(?i)inter[\s-]rater",
+                    r"(?i)cronbach'?s\s+alpha",
+                    r"(?i)consistency(\s+measure(s)?)?",
+                ],
+                "limitations": [
+                    r"(?i)limitation(s)?(\s+of)?(\s+the)?(\s+study)?",
+                    r"(?i)constraint(s)?",
+                    r"(?i)potential\s+bias(es)?",
+                    r"(?i)methodological\s+limitation(s)?",
+                    r"(?i)scope(\s+and\s+limitations)?",
+                ],
+            },
         }
 
-    def assess_clarity(self, text: str) -> float:
-        """Assess the clarity and articulation of the methodology"""
-        doc = self.nlp(text)
+    def _evaluate_methodology_quality(self, text: str) -> Tuple[float, Dict]:
+        """
+        Evaluate the quality of methodology using weighted criteria
+        """
+        scores = {}
+        details = defaultdict(lambda: defaultdict(list))
 
-        # Analyze sentence structure
-        sentence_lengths = [len(sent.text.split()) for sent in doc.sents]
-        if not sentence_lengths:
-            return 0
+        for category, subcategories in self.quality_indicators.items():
+            category_scores = {}
 
-        avg_length = np.mean(sentence_lengths)
+            for subcategory, patterns in subcategories.items():
+                matches = 0
+                total_patterns = len(patterns)
 
-        # Ideal sentence length is between 15-25 words
-        length_score = 1.0 - min(1.0, abs(20 - avg_length) / 15)
+                for pattern in patterns:
+                    found_matches = re.finditer(pattern, text)
+                    for match in found_matches:
+                        context = text[
+                            max(0, match.start() - 50) : min(
+                                len(text), match.end() + 50
+                            )
+                        ]
+                        matches += 1
+                        details[category][subcategory].append(context.strip())
 
-        # Check for methodology-specific linguistic markers
-        clarity_markers = [
-            "therefore",
-            "thus",
-            "consequently",
-            "specifically",
-            "in order to",
-            "as a result",
-            "for this purpose",
+                # Calculate normalized score for this subcategory
+                category_scores[subcategory] = min(1.0, matches / total_patterns)
+
+            # Calculate weighted average for category
+            subcategory_weights = {
+                "approach": 0.4,
+                "method_type": 0.3,
+                "justification": 0.3,
+                "methods": 0.35,
+                "sampling": 0.35,
+                "instruments": 0.3,
+                "techniques": 0.4,
+                "procedures": 0.3,
+                "tools": 0.3,
+                "validity": 0.35,
+                "reliability": 0.35,
+                "limitations": 0.3,
+            }
+
+            category_weight = sum(
+                subcategory_weights.get(subcat, 0.33) for subcat in subcategories.keys()
+            )
+            scores[category] = (
+                sum(
+                    score * subcategory_weights.get(subcat, 0.33)
+                    for subcat, score in category_scores.items()
+                )
+                / category_weight
+            )
+
+        # Calculate overall weighted score
+        category_weights = {
+            "research_design": 0.3,
+            "data_collection": 0.25,
+            "data_analysis": 0.25,
+            "validity_reliability": 0.2,
+        }
+
+        total_weight = sum(category_weights.values())
+        weighted_score = (
+            sum(
+                score * category_weights[category] for category, score in scores.items()
+            )
+            / total_weight
+        )
+
+        return weighted_score * 20, dict(details)  # Scale to 0-20
+
+    def _analyze_methodology_structure(self, text: str) -> float:
+        """
+        Analyze the structural coherence and organization of the methodology
+        """
+        # Split into paragraphs
+        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        if not paragraphs:
+            return 0.0
+
+        # Expected methodology flow patterns
+        flow_patterns = [
+            (r"(?i)research\s+design|approach|strategy", 0),
+            (r"(?i)data\s+collection|sampling|participants", 1),
+            (r"(?i)data\s+analysis|analytical|processing", 2),
+            (r"(?i)validity|reliability|limitations", 3),
         ]
 
-        marker_count = sum(1 for marker in clarity_markers if marker in text.lower())
-        marker_score = min(1.0, marker_count / 5)
+        # Score based on proper ordering
+        flow_score = 0
+        total_patterns = len(flow_patterns)
 
-        return length_score * 0.6 + marker_score * 0.4
+        for i, paragraph in enumerate(paragraphs):
+            normalized_position = i / len(paragraphs)
 
-    def _evaluate_with_llm(self, text: str) -> Dict:
-        """Use LLM to evaluate the methodology quality"""
+            for pattern, expected_position in flow_patterns:
+                if re.search(pattern, paragraph):
+                    expected_normalized = expected_position / total_patterns
+                    position_score = 1 - min(
+                        1, abs(normalized_position - expected_normalized)
+                    )
+                    flow_score += position_score
+
+        return min(1.0, flow_score / total_patterns)
+
+    def _evaluate_with_enhanced_llm(self, text: str) -> Dict:
+        """Enhanced LLM evaluation with specific methodology criteria"""
         prompt = f"""
-        Evaluate this research methodology section based on the following criteria:
-        1. Research Design (research_design) (0-20):
+        Evaluate this research methodology based on these detailed criteria:
+        
+        1. Research Design (0-20):
            - Clear articulation of research approach
            - Justification of chosen methods
            - Alignment with research objectives
-        2. Data Collection (data_collection) (0-20):
-           - Clear description of data collection methods
-           - Appropriate sampling strategies
-           - Consideration of limitations
-        3. Data Analysis (data_analysis) (0-20):
+           - Appropriateness of design
+        
+        2. Data Collection (0-20):
+           - Clarity of data collection methods
+           - Appropriateness of sampling strategy
+           - Description of instruments/tools
+           - Consideration of data quality
+        
+        3. Data Analysis (0-20):
            - Clear analytical framework
            - Appropriate analysis methods
-           - Consideration of validity/reliability
+           - Tool/software justification
+           - Processing procedures
         
-        Output Format:
-        {{
-          research_design: number,
-          data_collection: number,
-          data_analysis: number,
-          justification: string
-        }}
-        
+        4. Validity & Reliability (0-20):
+           - Validity measures
+           - Reliability considerations
+           - Limitation awareness
+           - Bias mitigation strategies
+
         Methodology text:
         {text[:4000]}...
+
+        Output Format:
+        {{
+          "research_design": number,
+          "data_collection": number,
+          "data_analysis": number,
+          "validity_reliability": number,
+          "justification": string,
+          "strengths": [string],
+          "improvements": [string]
+        }}
         
-        Provide numerical scores and brief justification in JSON format.
+        Return in JSON format.
         """
 
         try:
             response = self._get_llm_scores(prompt)
             return eval(response)
         except Exception as e:
-            print(f"Error in LLM evaluation: {e}")
+            print(f"LLM evaluation error: {e}")
             return {
                 "research_design": 0,
                 "data_collection": 0,
                 "data_analysis": 0,
+                "validity_reliability": 0,
                 "justification": "Error in LLM evaluation",
+                "strengths": [],
+                "improvements": [],
             }
 
-    def calculate_final_score(
-        self, component_analysis: Dict, clarity_score: float, llm_scores: Dict = None
-    ) -> Tuple[float, str]:
-        """Calculate final score and determine grade"""
-        # Base scores (without LLM)
-        component_score = component_analysis["overall_score"] * 10  # Out of 10
-        clarity_score = clarity_score * 10  # Out of 10
-
+    def _calculate_enhanced_final_score(
+        self, methodology_score: float, structure_score: float, llm_scores: Dict = None
+    ) -> Tuple[float, str, List[str]]:
+        """Calculate final score with detailed feedback based on rubric criteria"""
         if self.use_llm and llm_scores:
-            # Combine with LLM scores (normalized to 20 points)
-            llm_avg = (
-                llm_scores["research_design"]
-                + llm_scores["data_collection"]
-                + llm_scores["data_analysis"]
-            ) / 3
-            final_score = component_score * 0.3 + clarity_score * 0.3 + llm_avg * 0.4
+            # Combine scores with weights
+            final_score = (
+                methodology_score * 0.4
+                + structure_score * 0.2
+                + np.mean(
+                    [
+                        llm_scores["research_design"],
+                        llm_scores["data_collection"],
+                        llm_scores["data_analysis"],
+                        llm_scores["validity_reliability"],
+                    ]
+                )
+                * 0.4
+            )
         else:
-            final_score = (component_score + clarity_score) / 2
+            final_score = methodology_score * 0.7 + structure_score * 20 * 0.3
 
-        # Determine grade
+        # Generate detailed feedback
+        feedback = []
+
+        # Determine grade and feedback based on rubric
         if final_score >= 17:
             grade = "Distinction (17-20)"
+            feedback.append("Clearly articulated and well-justified methodology")
         elif final_score >= 14:
             grade = "Distinction (14-16)"
+            feedback.append("Well-argued methodology with minor improvements possible")
         elif final_score >= 12:
             grade = "Merit (12-13)"
+            feedback.append("Appropriate methodology but could be explained better")
         elif final_score >= 10:
             grade = "Pass (10-11)"
+            feedback.append("Methodology outlined but lacks clarity in key areas")
         elif final_score >= 5:
             grade = "Fail (5-9)"
+            feedback.append("Methodology is poorly articulated or inappropriate")
         else:
             grade = "Fail (0-4)"
+            feedback.append("Missing or irrelevant methodology information")
 
-        return final_score, grade
+        # Add structure-specific feedback
+        if structure_score < 0.6:
+            feedback.append("Improve logical flow and organization of methodology")
+
+        return final_score, grade, feedback
 
     def evaluate(self) -> Dict:
-        """Perform complete evaluation of the methodology section"""
+        """Perform enhanced evaluation of the methodology section"""
         # Extract methodology
         methodology_text = self.extract_methodology()
         if not methodology_text:
             return {
                 "score": 0,
                 "grade": "Fail (0-4)",
-                "feedback": "Methodology section not found",
+                "feedback": ["Methodology section not found"],
+                "details": {},
             }
 
-        # Analyze components
-        component_analysis = self.analyze_methodology_components(methodology_text)
+        # Evaluate methodology quality
+        methodology_score, quality_details = self._evaluate_methodology_quality(
+            methodology_text
+        )
 
-        # Assess clarity
-        clarity_score = self.assess_clarity(methodology_text)
+        # Analyze structural coherence
+        structure_score = self._analyze_methodology_structure(methodology_text)
 
         # LLM evaluation if enabled
         llm_scores = None
         if self.use_llm:
-            llm_scores = self._evaluate_with_llm(methodology_text)
+            llm_scores = self._evaluate_with_enhanced_llm(methodology_text)
 
-        # Calculate final score
-        score, grade = self.calculate_final_score(
-            component_analysis, clarity_score, llm_scores
+        # Calculate final score and generate feedback
+        score, grade, feedback = self._calculate_enhanced_final_score(
+            methodology_score, structure_score, llm_scores
         )
-
-        # Generate feedback
-        feedback = []
-        missing_components = []
-        for category, found_terms in component_analysis["components"].items():
-            if not found_terms:
-                missing_components.append(category.replace("_", " "))
-
-        if missing_components:
-            feedback.append(
-                f"Missing or insufficient coverage of: {', '.join(missing_components)}"
-            )
-        if clarity_score < 0.6:
-            feedback.append("Methodology lacks clear articulation")
-
-        if llm_scores:
-            feedback.append(f"LLM Analysis: {llm_scores.get('justification', '')}")
 
         return {
             "score": float(round(score, 2)),
             "grade": grade,
-            "component_analysis": {
-                "found_components": component_analysis["components"],
-                "component_scores": component_analysis["scores"],
-            },
-            "clarity_score": float(round(clarity_score * 10, 2)),
+            "feedback": feedback,
+            "methodology_score": float(round(methodology_score, 2)),
+            "structure_score": float(round(structure_score * 20, 2)),
             "llm_scores": llm_scores,
-            "feedback": ". ".join(feedback),
+            "quality_details": quality_details,
         }
