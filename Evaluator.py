@@ -5,28 +5,34 @@ import re
 import os
 import language_tool_python
 from typing import Dict, List, Tuple
+from openai import OpenAI
 
 load_dotenv()
 
 class BaseEvaluator:
     """Base class with common functionality"""
 
-    def __init__(self, pdf_path, use_llm: bool = True):
-        self.nlp = spacy.load("en_core_web_sm")
-        self.language_tool = language_tool_python.LanguageTool('en-US')
-        self.use_llm = use_llm
-        self.pdf_path = pdf_path
-        self.full_text = ""
+    def __init__(self, pdf_path, use_llm: bool = True, base_instance=None):
+        if base_instance:
+            self.nlp = base_instance.nlp
+            self.language_tool = base_instance.language_tool
+            self.full_text = base_instance.full_text
+            self.pdf_path = base_instance.pdf_path
+        else:
+            self.nlp = spacy.load("en_core_web_sm")
+            self.language_tool = language_tool_python.LanguageTool("en-US")
+            self.use_llm = use_llm
+            self.pdf_path = pdf_path
+            print("Extracting text...")
+            if self._extract_text():
+                print("Text extracted successfully ✅")
+            else:
+                raise Exception("Error extracting text ❌")
+
         if use_llm:
             self.open_ai_client = OpenAI(
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
-
-        if self.full_text == "":
-            if self._extract_text():
-                print("Text extracted successfully ✅")
-            else:
-                raise Exception("Error extracting text ❌")  # throw exception
 
     def _extract_text(self) -> bool:
         try:
