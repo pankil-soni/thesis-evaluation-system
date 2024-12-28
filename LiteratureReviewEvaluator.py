@@ -1,18 +1,17 @@
 from Evaluator import BaseEvaluator
 import re
 import numpy as np
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 from datetime import datetime
+from collections import defaultdict
 
 
 class LiteratureReviewEvaluator(BaseEvaluator):
-    """Evaluates thesis literature review"""
+    """Enhanced evaluator for thesis literature review with improved systematic review assessment"""
 
     def __init__(self, pdf_path, use_llm: bool = True, base_instance=None):
-        """
-        Initialize the LiteratureReviewEvaluator with option to use LLM
-        """
         super().__init__(pdf_path, use_llm, base_instance)
+        self.quality_indicators = self._initialize_quality_indicators()
 
     def extract_literature_review(self) -> str:
         """
@@ -47,241 +46,379 @@ class LiteratureReviewEvaluator(BaseEvaluator):
             print(f"Error in extract_literature_review: {e}")
             return ""
 
-    def _check_research_components(self, intro_text: str) -> Dict:
-        """
-        Check for presence and quality of key research components
-        """
-        components = {
-            "problem_statement": False,
-            "research_questions": False,
-            "objectives": False,
-            "justification": False,
+    def _initialize_quality_indicators(self) -> Dict:
+        """Initialize comprehensive quality indicators for systematic review assessment"""
+        return {
+            "systematic_approach": {
+                "methodology": [
+                    r"(?i)systematic(\s+literature)?\s+review",
+                    r"(?i)search\s+strategy",
+                    r"(?i)inclusion\s+criteria",
+                    r"(?i)exclusion\s+criteria",
+                    r"(?i)database[s]?\s+search",
+                    r"(?i)search\s+string[s]?",
+                ],
+                "structure": [
+                    r"(?i)chronological(\s+review)?",
+                    r"(?i)thematic(\s+analysis)?",
+                    r"(?i)systematic(\s+organization)?",
+                    r"(?i)methodological(\s+review)?",
+                ],
+                "synthesis": [
+                    r"(?i)synthesis\s+of",
+                    r"(?i)integrate[d]?\s+findings",
+                    r"(?i)critical\s+analysis",
+                    r"(?i)comparative\s+analysis",
+                ],
+            },
+            "evidence_quality": {
+                "source_types": [
+                    r"(?i)journal\s+article[s]?",
+                    r"(?i)conference\s+paper[s]?",
+                    r"(?i)book\s+chapter[s]?",
+                    r"(?i)technical\s+report[s]?",
+                    r"(?i)thesis|dissertation[s]?",
+                ],
+                "authority": [
+                    r"(?i)peer[\s-]reviewed",
+                    r"(?i)impact\s+factor",
+                    r"(?i)cited\s+by",
+                    r"(?i)seminal\s+work",
+                ],
+                "relevance": [
+                    r"(?i)relevant\s+to",
+                    r"(?i)addresses\s+the\s+research",
+                    r"(?i)pertinent\s+to",
+                    r"(?i)applicable\s+to",
+                ],
+            },
+            "critical_analysis": {
+                "comparison": [
+                    r"(?i)compare[d]?\s+to",
+                    r"(?i)in\s+contrast\s+to",
+                    r"(?i)similar\s+to",
+                    r"(?i)differs?\s+from",
+                ],
+                "evaluation": [
+                    r"(?i)strength[s]?",
+                    r"(?i)limitation[s]?",
+                    r"(?i)weakness[es]?",
+                    r"(?i)advantage[s]?",
+                    r"(?i)disadvantage[s]?",
+                ],
+                "gaps": [
+                    r"(?i)gap[s]?\s+in(\s+the)?\s+literature",
+                    r"(?i)future\s+research",
+                    r"(?i)unexplored",
+                    r"(?i)needs?\s+further",
+                ],
+            },
+            "depth_indicators": {
+                "theoretical": [
+                    r"(?i)theoretical\s+framework",
+                    r"(?i)conceptual\s+framework",
+                    r"(?i)underlying\s+theory",
+                    r"(?i)theoretical\s+foundation",
+                ],
+                "methodology": [
+                    r"(?i)methodological\s+approach",
+                    r"(?i)research\s+design",
+                    r"(?i)experimental\s+setup",
+                    r"(?i)study\s+design",
+                ],
+                "findings": [
+                    r"(?i)key\s+finding[s]?",
+                    r"(?i)result[s]?\s+show",
+                    r"(?i)concluded\s+that",
+                    r"(?i)demonstrate[d]?\s+that",
+                ],
+            },
         }
 
-        # Keywords and patterns for each component
-        patterns = {
-            "problem_statement": [
-                r"problem statement",
-                r"(?i)problem statement",
-                r"(?i)research problem",
-                r"(?i)this study addresses",
-                r"(?i)the problem is",
-                r"(?i)the main issue",
-            ],
-            "research_questions": [
-                r"(?i)research question",
-                r"(?i)\?",
-                r"(?i)this study seeks to",
-                r"(?i)we investigate",
-                r"(?i)aims to answer",
-            ],
-            "objectives": [
-                r"(?i)objective",
-                r"(?i)aim of this",
-                r"(?i)purpose of this",
-                r"(?i)goal of this",
-                r"(?i)this study aims",
-            ],
-            "justification": [
-                r"(?i)significance",
-                r"(?i)importance",
-                r"(?i)justification",
-                r"(?i)rationale",
-                r"(?i)this is important because",
-            ],
+    def _analyze_citation_network(self, text: str) -> Dict:
+        """Analyze the citation network and relationships"""
+        citation_patterns = {
+            "author_year": r"\((?:\w+(?:\s+and\s+\w+)?(?:\s+et\s+al\.?)?)?,\s*\d{4}\)",
+            "numeric": r"\[[\d,\s-]+\]",
+            "integrated": r"(?:(?:\w+(?:\s+and\s+\w+)?(?:\s+et\s+al\.?)?)\s+\(\d{4}\))",
         }
 
-        # Check for each component
-        for component, pattern_list in patterns.items():
-            for pattern in pattern_list:
-                if re.search(pattern, intro_text):
-                    components[component] = True
-                    break
+        citations = defaultdict(list)
+        for style, pattern in citation_patterns.items():
+            citations[style].extend(re.findall(pattern, text))
 
-        return components
-
-    def analyze_citations(self, text: str) -> Dict:
-        """Analyze citations and references in the literature review"""
-        # Extract citations using regex patterns
-        citation_patterns = [
-            r"\(\w+\s*(?:et al\.?)?,\s*\d{4}\)",  # (Author et al., 2020)
-            r"\[[\d,\s-]+\]",  # [1] or [1,2] or [1-3]
-            r"\(\d{4}\)",  # (2020)
-        ]
-
-        citations = []
-        for pattern in citation_patterns:
-            citations.extend(re.findall(pattern, text))
-
-        # Analyze citation years
+        # Extract years and analyze temporal distribution
         years = []
-        for citation in citations:
-            year_match = re.search(r"\d{4}", citation)
-            if year_match:
-                years.append(int(year_match.group()))
-
-        if not years:
-            return {"count": 0, "recency": 0, "distribution": 0}
+        for style_citations in citations.values():
+            for citation in style_citations:
+                year_match = re.search(r"\d{4}", citation)
+                if year_match:
+                    years.append(int(year_match.group()))
 
         current_year = datetime.now().year
-        avg_year = np.mean(years) if years else 0
-        recency_score = min(1.0, max(0, (avg_year - (current_year - 10)) / 10))
 
-        return {
-            "count": len(citations),
-            "recency": recency_score,
-            "distribution": np.std(years) if len(years) > 1 else 0,
+        # Calculate citation metrics
+        metrics = {
+            "total_citations": sum(len(cites) for cites in citations.values()),
+            "unique_citations": len(
+                set().union(*[set(cites) for cites in citations.values()])
+            ),
+            "citation_styles": sum(1 for style, cites in citations.items() if cites),
+            "years_range": max(years) - min(years) if years else 0,
+            "recency_score": self._calculate_recency_score(years, current_year),
+            "temporal_distribution": self._calculate_temporal_distribution(
+                years, current_year
+            ),
         }
 
-    def analyze_coverage(self, text: str) -> float:
-        """Analyze the breadth and depth of literature coverage"""
-        doc = self.nlp(text)
+        return metrics
 
-        # Identify key research concepts and methodologies
-        research_terms = set()
-        methodology_terms = set()
+    def _calculate_recency_score(self, years: List[int], current_year: int) -> float:
+        """Calculate the recency score of citations"""
+        if not years:
+            return 0.0
 
-        for token in doc:
-            if token.pos_ in ["NOUN", "PROPN"] and len(token.text) > 3:
-                research_terms.add(token.text.lower())
-            if token.dep_ == "compound" and token.head.pos_ == "NOUN":
-                research_terms.add((token.text + " " + token.head.text).lower())
+        weights = [
+            (
+                1.0
+                if year >= current_year - 5
+                else (
+                    0.8
+                    if year >= current_year - 7
+                    else 0.6 if year >= current_year - 10 else 0.4
+                )
+            )
+            for year in years
+        ]
 
-        # Calculate coverage score based on unique concepts
-        coverage_score = min(1.0, len(research_terms) / 100)  # Normalize to max of 1.0
-        return coverage_score
+        return sum(weights) / len(weights)
 
-    def _evaluate_with_llm(self, text: str) -> Dict:
-        """Use LLM to evaluate the literature review quality"""
+    def _calculate_temporal_distribution(
+        self, years: List[int], current_year: int
+    ) -> float:
+        """Calculate how well citations are distributed across time periods"""
+        if not years:
+            return 0.0
 
+        periods = defaultdict(int)
+        for year in years:
+            period = (current_year - year) // 3  # 3-year periods
+            periods[period] += 1
+
+        # Calculate distribution evenness
+        total_periods = len(periods)
+        if total_periods <= 1:
+            return 0.5
+
+        expected_per_period = len(years) / total_periods
+        variance = sum((count - expected_per_period) ** 2 for count in periods.values())
+
+        # Normalize the distribution score
+        return 1.0 / (1.0 + variance / len(years))
+
+    def _evaluate_systematic_approach(self, text: str) -> Tuple[float, Dict]:
+        """Evaluate the systematic approach of the literature review"""
+        scores = {}
+        evidence = defaultdict(list)
+
+        # Evaluate each quality indicator category
+        for category, indicators in self.quality_indicators.items():
+            category_scores = {}
+            for aspect, patterns in indicators.items():
+                matches = 0
+                for pattern in patterns:
+                    found_matches = re.finditer(pattern, text, re.IGNORECASE)
+                    for match in found_matches:
+                        context = text[
+                            max(0, match.start() - 50) : min(
+                                len(text), match.end() + 50
+                            )
+                        ]
+                        matches += 1
+                        evidence[f"{category}_{aspect}"].append(context.strip())
+
+                # Normalize score for this aspect
+                category_scores[aspect] = min(1.0, matches / len(patterns))
+
+            scores[category] = np.mean(list(category_scores.values()))
+
+        # Calculate weighted final score
+        weights = {
+            "systematic_approach": 0.3,
+            "evidence_quality": 0.25,
+            "critical_analysis": 0.25,
+            "depth_indicators": 0.2,
+        }
+
+        final_score = sum(
+            score * weights[category] for category, score in scores.items()
+        )
+        return final_score * 15, dict(evidence)  # Scale to 15 points
+
+    def _evaluate_with_enhanced_llm(self, text: str) -> Dict:
+        """Enhanced LLM evaluation with specific focus on systematic review criteria"""
         prompt = f"""
-        Evaluate this literature review section based on the following criteria:
-        1. Comprehensiveness (0-15):
-           - Breadth and depth of covered literature
-           - Systematic approach to review
-           - Critical analysis of sources
-        2. Citation quality (0-15):
-           - Use of recent and relevant sources
-           - Proper integration of citations
-        3. Synthesis (0-15):
-           - Connection between different works
-           - Identification of research gaps
-           - Critical evaluation
-
-        output format:
-
-        {{
-          comprehensiveness: number,
-          citation_quality: number,
-          synthesis: number,
-          justification: string
-        }}
+        Evaluate this literature review based on these detailed criteria:
+        
+        1. Systematic Approach (0-15):
+           - Clear methodology for literature selection
+           - Structured organization of review
+           - Comprehensive coverage of the field
+           - Evidence of systematic search strategy
+        
+        2. Evidence Quality (0-15):
+           - Use of high-quality sources
+           - Range of source types
+           - Authority of sources
+           - Currency and relevance
+        
+        3. Critical Analysis (0-15):
+           - Depth of analysis
+           - Comparison between sources
+           - Identification of gaps
+           - Synthesis of findings
+        
+        4. Research Integration (0-15):
+           - Connection to research objectives
+           - Theoretical framework development
+           - Research gap identification
+           - Future research directions
 
         Literature review text:
         {text[:4000]}...
 
-        Provide numerical scores and brief justification in JSON format.
+        Output Format:
+        {{
+            "systematic_approach": number,
+            "evidence_quality": number,
+            "critical_analysis": number,
+            "research_integration": number,
+            "justification": string,
+            "strengths": list of string,
+            "improvements": list of string,
+        }}
+        
+        Return in JSON format.
         """
 
         try:
             response = self._get_llm_scores(prompt)
             return eval(response)
         except Exception as e:
-            print(f"Error in LLM evaluation: {e}")
+            print(f"LLM evaluation error: {e}")
             return {
-                "comprehensiveness": 0,
-                "citation_quality": 0,
-                "synthesis": 0,
+                "systematic_approach": 0,
+                "evidence_quality": 0,
+                "critical_analysis": 0,
+                "research_integration": 0,
                 "justification": "Error in LLM evaluation",
+                "strengths": [],
+                "improvements": [],
             }
 
-    def calculate_final_score(
-        self, citation_analysis: Dict, coverage_score: float, llm_scores: Dict = None
-    ) -> Tuple[float, str]:
-        """Calculate final score and determine grade"""
-        # Base scores (without LLM)
+    def _calculate_enhanced_final_score(
+        self, systematic_score: float, citation_metrics: Dict, llm_scores: Dict = None
+    ) -> Tuple[float, str, List[str]]:
+        """Calculate final score with detailed feedback based on rubric criteria"""
+        # Calculate citation quality score (0-15)
         citation_score = (
-            min(1.0, citation_analysis["count"] / 30) * 5
-        )  # Normalize to 5 points
-        recency_score = citation_analysis["recency"] * 5
-        coverage_score = coverage_score * 5
+            min(1.0, citation_metrics["total_citations"] / 50) * 5
+            + citation_metrics["recency_score"] * 5
+            + citation_metrics["temporal_distribution"] * 5
+        )
 
         if self.use_llm and llm_scores:
-            # Combine with LLM scores (normalized to 15 points)
-            llm_avg = (
-                llm_scores["comprehensiveness"]
-                + llm_scores["citation_quality"]
-                + llm_scores["synthesis"]
-            ) / 3
+            # Combine scores with weights
             final_score = (
-                citation_score * 0.2
-                + recency_score * 0.2
-                + coverage_score * 0.2
-                + llm_avg * 0.4
+                systematic_score * 0.4
+                + citation_score * 0.3
+                + np.mean(
+                    [
+                        llm_scores["systematic_approach"],
+                        llm_scores["evidence_quality"],
+                        llm_scores["critical_analysis"],
+                        llm_scores["research_integration"],
+                    ]
+                )
+                * 0.3
             )
         else:
-            final_score = (citation_score + recency_score + coverage_score) / 3
+            final_score = systematic_score * 0.6 + citation_score * 0.4
 
-        # Determine grade
+        # Generate detailed feedback
+        feedback = []
+
+        # Determine grade and feedback based on rubric
         if final_score >= 14:
             grade = "Distinction (14-15)"
+            feedback.append("Outstanding systematic review with comprehensive evidence")
         elif final_score >= 11:
             grade = "Distinction (11-13)"
+            feedback.append("Well-executed review with minor gaps in coverage")
         elif final_score >= 9:
             grade = "Merit (9-10)"
+            feedback.append("Good review but lacks depth in critical analysis")
         elif final_score >= 8:
             grade = "Pass (8)"
+            feedback.append("Basic review with incomplete systematic approach")
         elif final_score >= 4:
             grade = "Fail (4-7)"
+            feedback.append("Insufficient literature coverage and analysis")
         else:
             grade = "Fail (0-3)"
+            feedback.append("Inadequate systematic approach and evidence")
 
-        return final_score, grade
+        # Add specific feedback based on metrics
+        if citation_metrics["total_citations"] < 30:
+            feedback.append(
+                f"Limited number of citations ({citation_metrics['total_citations']})"
+            )
+        if citation_metrics["recency_score"] < 0.6:
+            feedback.append("Need more recent sources")
+        if citation_metrics["temporal_distribution"] < 0.5:
+            feedback.append("Improve temporal distribution of sources")
+
+        return final_score, grade, feedback
 
     def evaluate(self) -> Dict:
-        """Perform complete evaluation of the literature review"""
+        """Perform enhanced evaluation of the literature review"""
         # Extract literature review
         lit_review_text = self.extract_literature_review()
         if not lit_review_text:
             return {
                 "score": 0,
                 "grade": "Fail (0-3)",
-                "feedback": "Literature review section not found",
+                "feedback": ["Literature review section not found"],
+                "details": {},
             }
 
-        # Analyze citations
-        citation_analysis = self.analyze_citations(lit_review_text)
+        # Analyze systematic approach and evidence
+        systematic_score, evidence_details = self._evaluate_systematic_approach(
+            lit_review_text
+        )
 
-        # Analyze coverage
-        coverage_score = self.analyze_coverage(lit_review_text)
+        # Analyze citation network
+        citation_metrics = self._analyze_citation_network(lit_review_text)
 
         # LLM evaluation if enabled
         llm_scores = None
         if self.use_llm:
-            llm_scores = self._evaluate_with_llm(lit_review_text)
+            llm_scores = self._evaluate_with_enhanced_llm(lit_review_text)
 
-        # Calculate final score
-        score, grade = self.calculate_final_score(
-            citation_analysis, coverage_score, llm_scores
+        # Calculate final score and generate feedback
+        score, grade, feedback = self._calculate_enhanced_final_score(
+            systematic_score, citation_metrics, llm_scores
         )
-
-        # Generate feedback
-        feedback = []
-        if citation_analysis["count"] < 20:
-            feedback.append("Insufficient number of citations")
-        if citation_analysis["recency"] < 0.5:
-            feedback.append("Citations are not recent enough")
-        if coverage_score < 0.6:
-            feedback.append("Limited coverage of the research area")
-
-        if llm_scores:
-            feedback.append(f"LLM Analysis: {llm_scores.get('justification', '')}")
 
         return {
             "score": float(round(score, 2)),
             "grade": grade,
-            "citation_analysis": citation_analysis,
-            "coverage_score": float(round(coverage_score * 5, 2)),
+            "feedback": feedback,
+            "systematic_score": float(round(systematic_score, 2)),
+            "citation_metrics": {
+                k: round(v, 2) if isinstance(v, float) else v
+                for k, v in citation_metrics.items()
+            },
             "llm_scores": llm_scores,
-            "feedback": ". ".join(feedback),
+            "evidence_details": evidence_details,
         }
