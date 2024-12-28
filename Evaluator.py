@@ -84,7 +84,6 @@ class BaseEvaluator:
                         for pattern in start_patterns:
                             if re.match(pattern, line):
                                 in_section = True
-                                print(pattern, line)
                                 break
                         continue
 

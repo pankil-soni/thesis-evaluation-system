@@ -4,6 +4,7 @@ from IntroductionEvaluator import IntroductionEvaluator
 from ResearchMethodsEvaluator import ResearchMethodsEvaluator
 from ExperimentImplementationEvaluator import ExperimentImplementationEvaluator
 from ResultsAnalysisEvaluator import ResultsAnalysisEvaluator
+from ConclusionEvaluator import ConclusionEvaluator
 
 base_evaluator = BaseEvaluator("AI ML Thesis Report.pdf")
 structure_evaluator = StructureAndGrammarEvaluator(
