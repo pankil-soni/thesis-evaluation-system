@@ -1,4 +1,10 @@
 from dotenv import load_dotenv
+import spacy
+import pdfplumber
+import re
+import os
+import language_tool_python
+from typing import Dict, List, Tuple
 
 load_dotenv()
 
@@ -7,6 +13,7 @@ class BaseEvaluator:
 
     def __init__(self, pdf_path, use_llm: bool = True):
         self.nlp = spacy.load("en_core_web_sm")
+        self.language_tool = language_tool_python.LanguageTool('en-US')
         self.use_llm = use_llm
         self.pdf_path = pdf_path
         self.full_text = ""
