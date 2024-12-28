@@ -1,10 +1,10 @@
 from dotenv import load_dotenv
 import spacy
-import pdfplumber
+from pypdf import PdfReader
 import re
 import os
 import language_tool_python
-from typing import Dict, List, Tuple
+from typing import Dict, List
 from openai import OpenAI
 
 load_dotenv()
@@ -42,8 +42,11 @@ class BaseEvaluator:
 
     def _extract_text(self) -> bool:
         try:
-            with pdfplumber.open(self.pdf_path) as pdf:
-                self.full_text = "\n".join(page.extract_text() for page in pdf.pages)
+            pdf_content = ""
+            reader = PdfReader(self.pdf_path)
+            for page in reader.pages:
+                pdf_content += page.extract_text()
+            self.full_text = pdf_content
             return True
         except Exception as e:
             print(f"Error extracting text: {e}")

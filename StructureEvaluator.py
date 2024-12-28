@@ -1,19 +1,13 @@
 from Evaluator import BaseEvaluator
 import pypdf
-import numpy as np
 import re
-from textblob import TextBlob
-
+from spellchecker import SpellChecker
 
 class StructureAndGrammarEvaluator(BaseEvaluator):
-    """Evaluates thesis structure and grammar"""
-
     def __init__(self, pdf_path, use_llm: bool = True, base_instance=None):
         super().__init__(pdf_path, use_llm, base_instance)
-
-    def check_structure(self):
-        """Check for presence of essential sections"""
-        essential_sections = [
+        # Define these once during initialization
+        self.essential_sections = [
             "abstract",
             "introduction",
             "methodology",
@@ -22,94 +16,139 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
             "conclusion",
             "references",
         ]
+        # Common academic/technical words to exclude from spell check
+        self.technical_words = set(
+            [
+                "methodology",
+                "analysis",
+                "data",
+                "research",
+                "hypothesis",
+                "theoretical",
+                "empirical",
+                # Add more domain-specific words
+            ]
+        )
 
-        found_sections = []
-        score = 0
+    def _structure_check(self):
+        """Faster structure checking using regex"""
         text_lower = self.full_text.lower()
+        found_sections = []
+        section_positions = []
 
-        for section in essential_sections:
-            if section in text_lower:
+        for section in self.essential_sections:
+            matches = list(re.finditer(rf"\b{section}\b", text_lower))
+            if matches:
                 found_sections.append(section)
-                score += 1
+                section_positions.append(matches[0].start())
 
-        return score / len(essential_sections), found_sections
+        # Check if sections are in logical order
+        order_score = 1.0 if sorted(section_positions) == section_positions else 0.7
+        return (
+            len(found_sections) / len(self.essential_sections)
+        ) * order_score, found_sections
 
-    def _check_formatting(self):
-        """Check formatting consistency"""
-        formatting_score = 0
+    def _efficient_formatting_check(self):
+        """Simplified formatting check focusing on key indicators"""
+        score = 0
 
-        # Check page numbers
+        # page number check
         with pypdf.PdfReader(self.pdf_path) as pdf:
-            num_pages = len(pdf.pages)
-            if num_pages > 1:  # Basic check for multiple pages
-                formatting_score += 0.2
+            if len(pdf.pages) > 1:
+                score += 0.25
 
-        # Check for consistent line spacing
-        lines = self.full_text.split("\n")
-        line_lengths = [len(line) for line in lines if line.strip()]
-        avg_length = np.mean(line_lengths)
-        std_length = np.std(line_lengths)
-        if std_length / avg_length < 0.5:  # Check for consistency
-            formatting_score += 0.2
+        # Sample-based line spacing check
+        lines = self.full_text.split("\n")[:100]  # Check first 100 lines only
+        if lines:
+            non_empty_lines = [len(line) for line in lines if line.strip()]
+            if non_empty_lines:
+                avg_length = sum(non_empty_lines) / len(non_empty_lines)
+                if 40 <= avg_length <= 100:  # Reasonable line length
+                    score += 0.25
 
-        # Check for proper headers (looking for capitalization patterns)
-        header_pattern = re.compile(r"^[A-Z][^.!?]*$", re.MULTILINE)
-        potential_headers = header_pattern.findall(self.full_text)
-        if len(potential_headers) >= 3:  # At least some headers found
-            formatting_score += 0.2
+        # header check using simplified pattern
+        caps_lines = len(
+            re.findall(
+                r"^[A-Z][^a-z\n]{2,}[A-Za-z ]*$", self.full_text[:5000], re.MULTILINE
+            )
+        )
+        if caps_lines >= 3:
+            score += 0.25
 
-        return formatting_score
+        return score
 
-    def _check_grammar_spelling(self):
-        """Check grammar and spelling"""
-        # Use LanguageTool for grammar checking
-        matches = self.language_tool.check(
-            self.full_text[:10000]
-        )  # Check first 10000 chars for performance
-        errors_per_word = len(matches) / len(self.full_text.split())
+    def _grammar_spell_check(self):
+        """Efficient grammar and spelling check"""
+        # Take a small sample for analysis
+        sample_text = self.full_text[:2000]
+        words = re.findall(r"\b\w+\b", sample_text.lower())
 
-        # Use TextBlob for spelling
-        blob = TextBlob(self.full_text[:10000])
-        words = blob.words
-        misspelled = len([word for word in words if not word.spellcheck()[0][1] == 1])
-        spelling_error_rate = misspelled / len(words)
+        if not words:
+            return 0
 
-        # Calculate combined score
-        grammar_spelling_score = 1.0 - (errors_per_word + spelling_error_rate) / 2
-        return max(0, min(grammar_spelling_score, 1))  # Normalize between 0 and 1
+        # Basic grammar checks (faster than LanguageTool)
+        grammar_errors = 0
 
-    def _check_writing_style(self):
-        """Analyze writing style"""
-        doc = self.nlp(self.full_text[:10000])  # Analyze first 10000 chars
+        # Check for basic patterns
+        grammar_patterns = {
+            r"\b(a)\s+[aeiou]": 1,  # Articles
+            r"\b(is|are|am)\s+\w+ed\b": 1,  # Verb agreement
+            r"\b(their|there|they\'re)\b": 0.5,  # Common confusions
+            r"\b(its|it\'s)\b": 0.5,
+        }
 
-        # Check sentence variety
-        sentence_lengths = [len(sent) for sent in doc.sents]
-        length_variety = np.std(sentence_lengths) / np.mean(sentence_lengths)
+        for pattern, weight in grammar_patterns.items():
+            grammar_errors += len(re.findall(pattern, sample_text.lower())) * weight
 
-        # Check vocabulary richness
-        words = [token.text.lower() for token in doc if token.is_alpha]
-        unique_words = len(set(words)) / len(words)
+        # spell check on unique words
+        unique_words = set(words) - self.technical_words
+        spell = SpellChecker()
+        misspelled = spell.unknown(unique_words)
+        spelling_error_rate = len(misspelled) / len(words)
 
-        # Calculate style score
-        style_score = length_variety * 0.5 + unique_words * 0.5
-        return min(style_score, 1.0)  # Normalize to 1
+        # Combined score
+        error_score = (grammar_errors / len(words) + spelling_error_rate) / 2
+        return max(0, 1 - error_score)
+
+    def _style_check(self):
+        """Simplified style analysis"""
+        sample_text = self.full_text[:3000]
+        sentences = re.split(r"[.!?]+", sample_text)
+
+        if not sentences:
+            return 0
+
+        # sentence variety check
+        lengths = [len(s.split()) for s in sentences if s.strip()]
+        if not lengths:
+            return 0
+
+        avg_length = sum(lengths) / len(lengths)
+        length_variety = sum(1 for l in lengths if abs(l - avg_length) < 10) / len(
+            lengths
+        )
+
+        # Basic vocabulary check
+        words = re.findall(r"\b\w+\b", sample_text.lower())
+        unique_ratio = len(set(words)) / len(words) if words else 0
+
+        return length_variety * 0.6 + unique_ratio * 0.4
 
     def evaluate(self):
-        """Perform complete evaluation and return final score"""
+        """Optimized evaluation process"""
         if not self._extract_text():
             return 0
 
-        # Get individual scores
-        structure_score, found_sections = self.check_structure()
-        self.sections = found_sections
-        formatting_score = self._check_formatting()
-        grammar_spelling_score = self._check_grammar_spelling()
-        style_score = self._check_writing_style()
+        # Get scores using faster methods
+        structure_score, found_sections = self._structure_check()
+        formatting_score = self._efficient_formatting_check()
+        grammar_spelling_score = self._grammar_spell_check()
+        style_score = self._style_check()
 
         # Calculate weighted final score (out of 5)
         weights = {
-            "structure": 0.3,
-            "formatting": 0.2,
+            "structure": 0.35,  # Increased weight for structure
+            "formatting": 0.15,
             "grammar_spelling": 0.3,
             "style": 0.2,
         }
@@ -121,19 +160,20 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
             + style_score * weights["style"]
         )
 
-        # Determine grade based on score
-        if final_score >= 4.5:
-            grade = "Distinction (5)"
-        elif final_score >= 4.0:
-            grade = "Distinction (4)"
-        elif final_score >= 3.0:
-            grade = "Merit (3)"
-        elif final_score >= 2.0:
-            grade = "Pass (2)"
-        elif final_score >= 1.0:
-            grade = "Fail (1)"
-        else:
-            grade = "Fail (0)"
+        # Grade mapping
+        grade_mapping = [
+            (4.5, "Distinction (5)"),
+            (4.0, "Distinction (4)"),
+            (3.0, "Merit (3)"),
+            (2.0, "Pass (2)"),
+            (1.0, "Fail (1)"),
+            (0, "Fail (0)"),
+        ]
+
+        grade = next(
+            (grade for threshold, grade in grade_mapping if final_score >= threshold),
+            "Fail (0)",
+        )
 
         return {
             "final_score": float(round(final_score, 2)),

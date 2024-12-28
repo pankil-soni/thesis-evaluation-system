@@ -9,3 +9,4 @@ textblob
 scholarly
 openai
 python-dotenv
+spellchecker

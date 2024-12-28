@@ -103,9 +103,9 @@ if uploaded_file:
 
         # Create all evaluators
         evaluators = {
-            "Structure & Grammar": StructureAndGrammarEvaluator(
-                base_evaluator.pdf_path, use_llm=use_llm, base_instance=base_evaluator
-            ),
+            # "Structure & Grammar": StructureAndGrammarEvaluator(
+            #     base_evaluator.pdf_path, use_llm=use_llm, base_instance=base_evaluator
+            # ),
             "Introduction": IntroductionEvaluator(
                 base_evaluator.pdf_path, use_llm=use_llm, base_instance=base_evaluator
             ),

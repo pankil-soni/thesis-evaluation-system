@@ -279,18 +279,20 @@ class CitationReferencesEvaluator(BaseEvaluator):
             feedback.append(f"LLM Analysis: {llm_scores.get('justification', '')}")
 
         return {
-            "score": round(score, 2),
+            "score": float(round(score, 2)),
             "grade": grade,
             "citation_analysis": {
                 "count": citation_analysis["count"],
-                "recency_score": round(citation_analysis["recency_score"], 2),
-                "consistency_score": round(citation_analysis["consistency_score"], 2),
+                "recency_score": float(round(citation_analysis["recency_score"], 2)),
+                "consistency_score": float(
+                    round(citation_analysis["consistency_score"], 2)
+                ),
             },
             "reference_analysis": {
                 "count": reference_analysis["count"],
                 "complete_refs": reference_analysis["complete_refs"],
-                "format_consistency": round(
-                    reference_analysis["format_consistency"], 2
+                "format_consistency": float(
+                    round(reference_analysis["format_consistency"], 2)
                 ),
             },
             "llm_scores": llm_scores,
