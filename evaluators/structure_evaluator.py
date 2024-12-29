@@ -1,5 +1,4 @@
 from evaluator import BaseEvaluator
-import pypdf
 import re
 from spellchecker import SpellChecker
 
