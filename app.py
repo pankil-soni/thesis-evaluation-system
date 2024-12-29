@@ -9,12 +9,23 @@ from evaluators.structure_evaluator import StructureAndGrammarEvaluator
 from evaluators.introduction_evaluator import IntroductionEvaluator
 from evaluators.literature_review_evaluator import LiteratureReviewEvaluator
 from evaluators.research_methods_evaluator import ResearchMethodsEvaluator
-from evaluators.experiment_implementation_evaluator import ExperimentImplementationEvaluator
+from evaluators.experiment_implementation_evaluator import (
+    ExperimentImplementationEvaluator,
+)
 from evaluators.results_analysis_evaluator import ResultsAnalysisEvaluator
 from evaluators.conclusion_evaluator import ConclusionEvaluator
 from evaluators.citation_references_evaluator import CitationReferencesEvaluator
 import numpy as np
 import io
+import spacy
+
+@st.cache_resource
+def get_model():
+    nlp = spacy.load("en_core_web_sm")
+    return nlp
+
+nlp= get_model()
+
 
 # Set page configuration
 st.set_page_config(
@@ -716,7 +727,9 @@ def main():
         try:
             with st.spinner("Evaluating thesis..."):
                 # Initialize evaluators and process
-                base_evaluator = BaseEvaluator(str(temp_path))
+                base_evaluator = BaseEvaluator(
+                    str(temp_path), nlp=nlp
+                )
                 evaluators = {
                     "Structure & Grammar": StructureAndGrammarEvaluator(
                         base_evaluator.pdf_path,

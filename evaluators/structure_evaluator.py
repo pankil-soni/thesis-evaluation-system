@@ -2,11 +2,10 @@ from evaluator import BaseEvaluator
 import re
 from spellchecker import SpellChecker
 
-
 class StructureAndGrammarEvaluator(BaseEvaluator):
     def __init__(self, pdf_path, use_llm: bool = True, base_instance=None):
         super().__init__(pdf_path, use_llm, base_instance)
-        # Define these once during initialization
+        self.spell = SpellChecker()
         self.essential_sections = [
             "abstract",
             "introduction",
@@ -16,7 +15,7 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
             "conclusion",
             "references",
         ]
-        # Common academic/technical words to exclude from spell check
+        # Expanded technical words list
         self.technical_words = set(
             [
                 "methodology",
@@ -26,6 +25,24 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
                 "hypothesis",
                 "theoretical",
                 "empirical",
+                "quantitative",
+                "qualitative",
+                "algorithm",
+                "implementation",
+                "framework",
+                "paradigm",
+                "correlation",
+                "coefficient",
+                "visualization",
+                "parameter",
+                "optimization",
+                "regression",
+                "validation",
+                "metrics",
+                "dissertation",
+                "thesis",
+                "academia",
+                "scholarly",
             ]
         )
 
@@ -75,65 +92,113 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
 
         return score
 
-    def _grammar_spell_check(self):
-        """Efficient grammar and spelling check"""
-        # Take a small sample for analysis
-        sample_text = self.full_text[:10000]
-        words = re.findall(r"\b\w+\b", sample_text.lower())
+    def _enhanced_grammar_check(self, text):
+        """More comprehensive grammar checking using spaCy and patterns"""
+        doc = self.nlp(text)
+        errors = 0
 
-        if not words:
-            return 0
-
-        # Basic grammar checks (than LanguageTool)
-        grammar_errors = 0
-
-        # Check for basic patterns
+        # Common grammar patterns to check
         grammar_patterns = {
-            r"\b(a)\s+[aeiou]": 1,  # Articles
-            r"\b(is|are|am)\s+\w+ed\b": 1,  # Verb agreement
-            r"\b(their|there|they\'re)\b": 0.5,  # Common confusions
-            r"\b(its|it\'s)\b": 0.5,
+            r"\b(a)\s+[aeiou]": 2,  # Article errors
+            r"\b(is|are|am)\s+\w+ed\b": 1,  # BE verb agreement
+            r"\b(their|there|they're)\b": 1,  # Common confusions
+            r"\b(its|it's)\b": 1,
             r"\b(have|has|had)\s+been\b": 0.5,
-            r"\b(\w+ed)\s+(?:\1|a|an)\b": 0.5,
-            r"\b(\w+ing)\s+(?:\1|a|an)\b": 0.5,
+            r"\b(\w+ed)\s+(?:\1)\b": 1,  # Repeated words
+            r"\b(in|on|at)\s+(?:\1)\b": 1,  # Repeated prepositions
+            r"\b(this|that|these|those)\s+(?:is|are)\b": 0.5,  # Demonstrative agreement
         }
 
+        # Check patterns
         for pattern, weight in grammar_patterns.items():
-            grammar_errors += len(re.findall(pattern, sample_text.lower())) * weight
+            errors += len(re.findall(pattern, text.lower())) * weight
 
-        # spell check on unique words
+        # Check for sentence boundary detection issues
+        for sent in doc.sents:
+            if len(sent.text.split()) < 3:  # Very short sentences
+                errors += 0.5
+            if len(sent.text.split()) > 40:  # Very long sentences
+                errors += 1
+
+        # Check for subject-verb agreement using spaCy
+        for token in doc:
+            if token.dep_ == "nsubj" and token.head.pos_ == "VERB":
+                # Simple number agreement check
+                if token.tag_.startswith("NN") and token.head.tag_.startswith("VB"):
+                    if (token.tag_ == "NNS" and token.head.tag_ == "VBZ") or (
+                        token.tag_ == "NN" and token.head.tag_ == "VBP"
+                    ):
+                        errors += 1
+
+        return errors
+
+    def _advanced_style_check(self, text):
+        """Enhanced style analysis using spaCy"""
+        doc = self.nlp(text)
+
+        # Analyze sentence variety
+        sentence_lengths = [len(sent.text.split()) for sent in doc.sents]
+        if not sentence_lengths:
+            return 0
+
+        # Calculate sentence length variance (good writing has varied sentence lengths)
+        avg_length = sum(sentence_lengths) / len(sentence_lengths)
+        length_variance = sum((l - avg_length) ** 2 for l in sentence_lengths) / len(
+            sentence_lengths
+        )
+        length_score = min(1.0, length_variance / 100)  # Normalize variance score
+
+        # Vocabulary richness
+        words = [
+            token.text.lower() for token in doc if token.is_alpha and not token.is_stop
+        ]
+        unique_words = set(words)
+        vocabulary_score = len(unique_words) / (
+            len(words) + 1
+        )  # Add 1 to avoid division by zero
+
+        # Check for passive voice (too many passives is typically not good)
+        passives = sum(1 for token in doc if token.dep_ == "nsubjpass")
+        passive_ratio = passives / len(doc)
+        passive_score = 1 - min(1.0, passive_ratio * 5)  # Penalize high passive usage
+
+        return length_score * 0.4 + vocabulary_score * 0.4 + passive_score * 0.2
+
+    def _grammar_spell_check(self):
+        """Enhanced grammar and spelling check"""
+        sample_text = self.full_text[
+            :10000
+        ]  # Analyze first 10000 chars for performance
+
+        # Spell check
+        words = [word.lower() for word in re.findall(r"\b\w+\b", sample_text)]
         unique_words = set(words) - self.technical_words
-        spell = SpellChecker()
-        misspelled = spell.unknown(unique_words)
-        spelling_error_rate = len(misspelled) / len(words)
+        misspelled = self.spell.unknown(unique_words)
+        spelling_error_rate = len(misspelled) / (len(words) + 1)
 
-        # Combined score
-        error_score = (grammar_errors / len(words) + spelling_error_rate) / 2
-        return max(0, 1 - error_score)
+        # Grammar check
+        grammar_errors = self._enhanced_grammar_check(sample_text)
+        grammar_error_rate = grammar_errors / (len(words) + 1)
 
-    def _style_check(self):
-        """Simplified style analysis"""
-        sample_text = self.full_text[:3000]
-        sentences = re.split(r"[.!?]+", sample_text)
+        # Combined score with weights
+        spelling_weight = 0.4
+        grammar_weight = 0.6
 
-        if not sentences:
-            return 0
-
-        # sentence variety check
-        lengths = [len(s.split()) for s in sentences if s.strip()]
-        if not lengths:
-            return 0
-
-        avg_length = sum(lengths) / len(lengths)
-        length_variety = sum(1 for l in lengths if abs(l - avg_length) < 10) / len(
-            lengths
+        final_score = max(
+            0,
+            1
+            - (
+                spelling_error_rate * spelling_weight
+                + grammar_error_rate * grammar_weight
+            ),
         )
 
-        # Basic vocabulary check
-        words = re.findall(r"\b\w+\b", sample_text.lower())
-        unique_ratio = len(set(words)) / len(words) if words else 0
+        return final_score
 
-        return length_variety * 0.6 + unique_ratio * 0.4
+    def _style_check(self):
+        """Enhanced style check implementation"""
+        sample_text = self.full_text[:5000]
+        return self._advanced_style_check(sample_text)
 
     def evaluate(self):
         """Optimized evaluation process"""

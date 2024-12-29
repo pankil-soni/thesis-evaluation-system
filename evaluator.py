@@ -1,9 +1,7 @@
 from dotenv import load_dotenv
-import spacy
 import fitz
 import re
 import os
-import language_tool_python
 from typing import Dict, Tuple
 from openai import OpenAI
 import string
@@ -13,31 +11,28 @@ import streamlit as st
 
 load_dotenv()
 
-nlp = spacy.load('en_core_web_sm')
-@st.cache(allow_output_mutation=True)
-def get_model():
-    tool = language_tool_python.LanguageTool('en-US')
-    return tool
-language_tool = get_model()
-
 
 class BaseEvaluator:
     """Base class with common functionality"""
 
-    def __init__(self, pdf_path, use_llm: bool = True, base_instance=None):
+    def __init__(
+        self,
+        pdf_path,
+        use_llm: bool = True,
+        base_instance=None,
+        nlp=None,
+    ):
 
         self.use_llm = use_llm
         self._init_section_patterns()
 
         if base_instance:
             self.nlp = base_instance.nlp
-            self.language_tool = base_instance.language_tool
             self.full_text = base_instance.full_text
             self.sections = base_instance.sections
             self.pdf_path = base_instance.pdf_path
         else:
             self.nlp = nlp
-            self.language_tool = language_tool
             self.pdf_path = pdf_path
             print("Extracting text...")
             if self._extract_text():
