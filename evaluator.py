@@ -12,12 +12,7 @@ import numpy as np
 
 load_dotenv()
 
-try:
-    nlp = spacy.load('en_core_web_sm')
-except OSError:
-    print("Downloading spaCy model...")
-    spacy.cli.download('en_core_web_sm')
-    nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load('en_core_web_sm')
 language_tool = language_tool_python.LanguageTool("en-US")
 
 
