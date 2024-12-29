@@ -14,34 +14,7 @@ class ResultsAnalysisEvaluator(BaseEvaluator):
 
     def extract_results_section(self) -> str:
         """Extract the results and discussion section"""
-        results_patterns = [
-            r"(?i)^(?:CHAPTER\s+[45]\.?\s*)?RESULTS?\s*$",
-            r"(?i)^(?:CHAPTER\s+[45]\.?\s*)?FINDINGS?\s*$",
-            r"(?i)^(?:[45]\.?\s*)?RESULTS?\s+AND\s+DISCUSSIONS?\s*$",
-            r"(?i)^(?:[45]\.?\s*)?ANALYSIS\s+AND\s+RESULTS?\s*$",
-            r"(?i)^(?:CHAPTER\s+[45]\.?\s*)?ANALYSIS\s+AND\s+DISCUSSIONS?\s*$",
-            r"(?i)^(?:EXPERIMENTAL\s+RESULTS?\s*$)",
-            r"(?i)^(?:RESULTS?\s+AND\s+ANALYSIS)\s*$",
-        ]
-
-        next_section_patterns = [
-            r"(?i)^(?:CHAPTER\s+6)",
-            r"(?i)^(?:6\.?\s+)",
-            r"(?i)^(?:CONCLUSIONS?)\s*$",
-            r"(?i)^(?:FUTURE\s+WORK)\s*$",
-            r"(?i)^(?:RECOMMENDATIONS?)\s*$",
-            r"(?i)^(?:REFERENCES?)\s*$",
-            r"(?i)^(?:BIBLIOGRAPHY)\s*$",
-        ]
-
-        try:
-            results_text = self._extract_section(
-                self.full_text, results_patterns, next_section_patterns
-            )
-            return results_text
-        except Exception as e:
-            print(f"Error extracting results section: {e}")
-            return ""
+        return self.sections.get("results","")
 
     def _initialize_quality_indicators(self) -> Dict:
         """Initialize comprehensive quality indicators for results analysis assessment"""

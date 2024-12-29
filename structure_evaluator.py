@@ -178,7 +178,7 @@ class StructureAndGrammarEvaluator(BaseEvaluator):
         )
 
         return {
-            "final_score": float(round(final_score, 2)),
+            "score": float(round(final_score, 2)),
             "grade": grade,
             "details": {
                 "structure": {

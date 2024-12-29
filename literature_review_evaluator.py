@@ -17,34 +17,7 @@ class LiteratureReviewEvaluator(BaseEvaluator):
         """
         Extract the introduction section accurately using multiple extraction methods
         """
-
-        # Patterns for identifying literature review section
-        lit_review_patterns = [
-            r"(?i)^(?:CHAPTER\s+2\.?\s*)?LITERATURE\s+REVIEW\s*$",
-            r"(?i)^(?:2\.?\s+)?LITERATURE\s+REVIEW\s*$",
-            r"(?i)^(?:BACKGROUND|RELATED\s+WORK)\s*$",
-            r"(?i)^(?:STATE\s+OF\s+THE\s+ART)\s*$",
-            r"(?i)^(?:THEORETICAL\s+FRAMEWORK)\s*$",
-        ]
-
-        # Patterns for next section
-        next_section_patterns = [
-            r"(?i)^(?:CHAPTER\s+3)",
-            r"(?i)^(?:3\.?\s+)",
-            r"(?i)^(?:METHODOLOGY)",
-            r"(?i)^(?:RESEARCH\s+DESIGN)",
-            r"(?i)^(?:EXPERIMENTAL\s+SETUP)",
-            r"(?i)^(?:RESEARCH\s+METHODOLOGY)",
-        ]
-
-        try:
-            lit_review_text = self._extract_section(
-                self.full_text, lit_review_patterns, next_section_patterns
-            )
-            return lit_review_text
-        except Exception as e:
-            print(f"Error in extract_literature_review: {e}")
-            return ""
+        return self.sections.get("literature_review", "")
 
     def _initialize_quality_indicators(self) -> Dict:
         """Initialize comprehensive quality indicators for systematic review assessment"""

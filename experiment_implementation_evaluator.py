@@ -14,38 +14,7 @@ class ExperimentImplementationEvaluator(BaseEvaluator):
 
     def extract_implementation_section(self) -> str:
         """Extract the implementation/experiment section"""
-        impl_patterns = [
-            r"(?i)^(?:CHAPTER\s+4\.?\s*)?(?:ANALYSIS,?\s*DESIGN,?\s*(?:AND\s+)?EXPERIMENTS?)\s*$",
-            r"(?i)^(?:CHAPTER\s+4\.?\s*)?IMPLEMENTATION\s*$",
-            r"(?i)^(?:4\.?\s*)?(?:ANALYSIS,?\s*DESIGN,?\s*(?:AND\s+)?EXPERIMENTS?)\s*$",
-            r"(?i)^(?:EXPERIMENTAL\s+SETUP)\s*$",
-            r"(?i)^(?:SYSTEM\s+IMPLEMENTATION)\s*$",
-            r"(?i)^(?:CHAPTER\s+4\.?\s*)?(?:DESIGN\s+AND\s+IMPLEMENTATION)\s*$",
-            r"(?i)^(?:SYSTEM\s+DESIGN\s+AND\s+DEVELOPMENT)\s*$",
-            r"(?i)^(?:DEVELOPMENT\s+AND\s+IMPLEMENTATION)\s*$",
-            r"(?i)^(?:SIMULATION\s+AND\s+RESULTS)\s*$",
-        ]
-
-        next_section_patterns = [
-            r"(?i)^(?:CHAPTER\s+5)",
-            r"(?i)^(?:5\.?\s+)",
-            r"(?i)^(?:RESULTS?\s+AND\s+DISCUSSIONS?)\s*$",
-            r"(?i)^(?:RESULTS?\s+AND\s+ANALYSIS)\s*$",
-            r"(?i)^(?:EVALUATION)\s*$",
-            r"(?i)^(?:DISCUSSION)\s*$",
-            r"(?i)^(?:CONCLUSION)",
-            r"(?i)^(?:FUTURE\s+WORK)",
-            r"(?i)^(?:REFERENCES)",
-        ]
-
-        try:
-            implementation_text = self._extract_section(
-                self.full_text, impl_patterns, next_section_patterns
-            )
-            return implementation_text
-        except Exception as e:
-            print(f"Error extracting implementation section: {e}")
-            return ""
+        return self.sections.get("analysis_design", "")
 
     def _initialize_quality_indicators(self) -> Dict:
         """Initialize comprehensive quality indicators for implementation assessment"""

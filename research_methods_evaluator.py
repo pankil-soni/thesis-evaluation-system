@@ -14,33 +14,7 @@ class ResearchMethodsEvaluator(BaseEvaluator):
 
     def extract_methodology(self) -> str:
         """Extract the methodology section using patterns"""
-        method_patterns = [
-            r"(?i)^(?:METHODOLOGY)",
-            r"(?i)^(?:CHAPTER\s+3\.?\s)?METHODOLOGY\s$",
-            r"(?i)^(?:3\.?\s+)?RESEARCH\s+METHODS?\s$",
-            r"(?i)^(?:RESEARCH\s+METHODOLOGY)\s$",
-            r"(?i)^(?:METHODS?\s+AND\s+MATERIALS)\s$",
-            r"(?i)^(?:EXPERIMENTAL\s+DESIGN)\s$",
-        ]
-
-        next_section_patterns = [
-            r"(?i)^(?:CHAPTER\s+4)",
-            r"(?i)^(?:4\.?\s+)",
-            r"(?i)^(?:RESULTS)",
-            r"(?i)^(?:FINDINGS)",
-            r"(?i)^(?:DATA\s+ANALYSIS)",
-            r"(?i)^(?:ANALYSIS,\s+DESIGN,\s+EXPERIMENTS\s+AND\s+DISCUSSION)",
-            r"(?i)^(?:ANALYSIS\s+AND\s+DISCUSSION)",
-        ]
-
-        try:
-            methodology_text = self._extract_section(
-                self.full_text, method_patterns, next_section_patterns
-            )
-            return methodology_text
-        except Exception as e:
-            print(f"Error extracting methodology: {e}")
-            return ""
+        return self.sections.get("methodology", "")
 
     def _initialize_quality_indicators(self) -> Dict:
         """Initialize comprehensive quality indicators for methodology assessment"""

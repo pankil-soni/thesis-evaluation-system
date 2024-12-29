@@ -13,49 +13,7 @@ class ConclusionEvaluator(BaseEvaluator):
 
     def extract_conclusion_section(self) -> str:
         """Extract the conclusion section"""
-        conclusion_patterns = [
-            # Basic conclusion headers
-            r"(?i)^\s*(?:CONCLUSION|CONCLUSIONS)\s*$",
-            r"(?i)^\s*(?:\d+\.)?\s*(?:CONCLUSION|CONCLUSIONS)\s*$",
-            # Numbered chapter variations
-            r"(?i)^\s*(?:CHAPTER\s+\d+[:.]?)?\s*(?:CONCLUSION|CONCLUSIONS)\s*$",
-            # Common compound headers
-            r"(?i)^\s*(?:\d+\.)?\s*(?:SUMMARY\s+AND\s+CONCLUSIONS?)\s*$",
-            r"(?i)^\s*(?:\d+\.)?\s*(?:CONCLUSIONS?\s+AND\s+(?:FUTURE\s+)?(?:WORK|RESEARCH|DIRECTIONS|RECOMMENDATIONS?))\s*$",
-            r"(?i)^\s*(?:\d+\.)?\s*(?:DISCUSSION\s+AND\s+CONCLUSIONS?)\s*$",
-            r"(?i)^\s*(?:\d+\.)?\s*(?:CONCLUSIONS\s+AND\s+RECOMMENDATIONS?)\s*$",
-            r"(?i)^\s*(?:\d+\.)?\s*(?:CONCLUSIONS\s+&\s+RECOMMENDATIONS?)\s*$",
-            r"(?i)^\s*(?:CONCLUDING\s+(?:REMARKS|DISCUSSION|SUMMARY))\s*$",
-            # Additional variants
-            r"(?i)^\s*(?:\d+\.)?\s*(?:FINAL\s+(?:CONCLUSIONS?|REMARKS))\s*$",
-            r"(?i)^\s*(?:SUMMARY,?\s+CONCLUSIONS?\s+(?:AND\s+RECOMMENDATIONS?)?)\s*$",
-            r"(?i)^\s*(?:SUMMARY,?\s+CONCLUSIONS?\s+(?:&\s+RECOMMENDATIONS?)?)\s*$",
-        ]
-
-        next_section_patterns = [
-            # Basic next section headers
-            r"(?i)^\s*(?:REFERENCES?|BIBLIOGRAPHY)\s*$",
-            r"(?i)^\s*(?:APPENDIX|APPENDICES)(?:\s+[A-Z])?\s*$",
-            # Publication related sections
-            r"(?i)^\s*(?:LIST\s+OF\s+(?:REFERENCES|PUBLICATIONS))\s*$",
-            r"(?i)^\s*(?:PUBLISHED\s+(?:PAPERS?|WORKS?))\s*$",
-            # Additional common end sections
-            r"(?i)^\s*(?:ACKNOWLEDGEMENTS?)\s*$",
-            r"(?i)^\s*(?:SUPPORTING\s+INFORMATION)\s*$",
-            r"(?i)^\s*(?:SUPPLEMENTARY\s+(?:MATERIAL|DATA))\s*$",
-            r"(?i)^\s*(?:AUTHOR\s+(?:CONTRIBUTIONS?|INFORMATION))\s*$",
-            # Numbered variations
-            r"(?i)^\s*(?:\d+\.)?\s*(?:REFERENCES?|BIBLIOGRAPHY)\s*$",
-        ]
-
-        try:
-            conclusion_text = self._extract_section(
-                self.full_text, conclusion_patterns, next_section_patterns
-            )
-            return conclusion_text
-        except Exception as e:
-            print(f"Error extracting conclusion section: {e}")
-            return ""
+        return self.sections.get("conclusion", "")
 
     def _initialize_quality_indicators(self) -> Dict:
         """Initialize comprehensive quality indicators for conclusion assessment"""

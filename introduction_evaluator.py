@@ -105,41 +105,7 @@ class IntroductionEvaluator(BaseEvaluator):
         """
         Extract the introduction section accurately using multiple extraction methods
         """
-
-        # Patterns for identifying introduction section
-        intro_patterns = [
-            r"(?i)^(?:CHAPTER\s+1\.?\s*)?INTRODUCTION\s*$",
-            r"(?i)^(?:1\.?\s+)?INTRODUCTION\s*$",
-            r"(?i)^(?:CHAPTER\s+ONE\.?\s*)?INTRODUCTION\s*$",
-            r"(?i)^(?:1\.0\s+)?INTRODUCTION\s*$",
-            r"(?i)^(?:CHAPTER\s+1:?\s*)?INTRODUCTION\s*$",
-        ]
-
-        # Patterns for next section (to identify end of introduction)
-        next_section_patterns = [
-            r"(?i)^(?:CHAPTER\s+2)",
-            r"(?i)^(?:2\.?\s+)",
-            r"(?i)^(?:LITERATURE\s+REVIEW)",
-            r"(?i)^(?:THEORETICAL\s+FRAMEWORK)",
-            r"(?i)^(?:RESEARCH\s+METHODOLOGY)",
-            r"(?i)^(?:METHODOLOGY)",
-            r"(?i)^(?:BACKGROUND)",
-        ]
-
-        try:
-            introduction_text = self._extract_section(
-                self.full_text, intro_patterns, next_section_patterns
-            )
-
-            # Validate the extracted text
-            if self._validate_introduction_content(introduction_text):
-                return introduction_text
-            else:
-                return ""
-
-        except Exception as e:
-            print(f"Error in extract_introduction: {e}")
-            return ""
+        return self.sections.get("introduction", "")
 
     def _validate_introduction_content(self, text: str) -> bool:
         """

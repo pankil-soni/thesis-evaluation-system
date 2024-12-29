@@ -15,28 +15,7 @@ class CitationReferencesEvaluator(BaseEvaluator):
 
     def extract_references_section(self) -> str:
         """Extract the references section"""
-        reference_patterns = [
-            r"(?i)^REFERENCES?\s*$",
-            r"(?i)^BIBLIOGRAPHY\s*$",
-            r"(?i)^WORKS?\s+CITED\s*$",
-            r"(?i)^LIST\s+OF\s+REFERENCES?\s*$",
-        ]
-
-        next_section_patterns = [
-            r"(?i)^APPENDIX|APPENDICES\s*$",
-            r"(?i)^LIST\s+OF\s+PUBLICATIONS?\s*$",
-            r"(?i)^PUBLICATIONS?\s*$",
-            r"(?i)^VITA\s*$",
-        ]
-
-        try:
-            references_text = self._extract_section(
-                self.full_text, reference_patterns, next_section_patterns
-            )
-            return references_text
-        except Exception as e:
-            print(f"Error extracting references section: {e}")
-            return ""
+        return self.sections.get("references", "")
 
     def _initialize_quality_indicators(self) -> Dict:
         """Initialize comprehensive quality indicators for citation assessment"""
@@ -356,7 +335,7 @@ class CitationReferencesEvaluator(BaseEvaluator):
 
         # Analyze citation style consistency
         style_consistency, style_details = self._analyze_citation_style_consistency(
-            self.full_text
+            references_text
         )
 
         # Analyze reference quality
