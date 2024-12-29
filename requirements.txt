@@ -4,7 +4,10 @@ PyMuPDF
 numpy 
 openai
 python-dotenv
+openpyxl
 spellchecker
+pyspellchecker
+scholarly
 pandas
 plotly
 streamlit

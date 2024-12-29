@@ -16,7 +16,6 @@ from evaluators.citation_references_evaluator import CitationReferencesEvaluator
 import numpy as np
 import io
 
-
 # Set page configuration
 st.set_page_config(
     page_title="Thesis Evaluation System",
