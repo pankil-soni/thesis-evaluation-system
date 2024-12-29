@@ -9,11 +9,16 @@ from openai import OpenAI
 import string
 from collections import defaultdict
 import numpy as np
+import streamlit as st
 
 load_dotenv()
 
 nlp = spacy.load('en_core_web_sm')
-language_tool = language_tool_python.LanguageTool("en-US")
+@st.cache(allow_output_mutation=True)
+def get_model():
+    tool = language_tool_python.LanguageTool('en-US')
+    return tool
+language_tool = get_model()
 
 
 class BaseEvaluator:
