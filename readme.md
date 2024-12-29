@@ -137,7 +137,7 @@ This project is distributed under the MIT License. See `LICENSE` for more inform
 
 ## 📧 Contact
 
-Project Maintainer: [Your Name](mailto:your.email@example.com)
+Project Maintainer: [Pankil Soni](mailto:pmsoni2016@gmail.com)
 
 Project Link: [https://github.com/pankil-soni/thesis-evaluation-system](https://github.com/pankil-soni/thesis-evaluation-system)
 
